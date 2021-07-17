@@ -68,11 +68,6 @@ def f(x):
 def custom_loss():
     def dNN(x):
         return (g(x+inf_s) - g(x)) / inf_s
-    #summation = []
-    #for x in np.linspace(0,1,10):
-    #    dNN = (g(x+inf_s)-g(x))/inf_s
-    #    summation.append((dNN - f(x))**2)
-    print([dNN(x).numpy()[0,0,0] for x in np.linspace(0,1,11)])
     summation = [(dNN(x) - f(x))**2 for x in np.linspace(0, 1, 11)]
     return tf.reduce_sum(tf.abs(summation))
     # return tf.sqrt(tf.reduce_mean(tf.abs(summation)))
@@ -84,8 +79,6 @@ def train_step():
     gradients = tape.gradient(loss, trainable_variables)
     optimizer.apply_gradients(zip(gradients, trainable_variables))
 
-print(custom_loss())
-"""
 for i in range(training_steps):
     train_step()
     if i % display_step == 0:
@@ -99,10 +92,10 @@ def true_solution(x):
     return x**2 + 1
 
 X = np.linspace(0, 1, 101)
-result = []
-for i in X:
+result = [g(x).numpy()[0, 0, 0] for x in X]
+#for i in X:
   # result.append(f(i))
-  result.append(g(i).numpy()[0][0][0])
+#  result.append(g(i).numpy()[0][0][0])
 
 S = true_solution(X)
   
@@ -110,4 +103,3 @@ plt.plot(X, S, label="Original Function")
 plt.plot(X, result, label="Neural Net Approximation")
 plt.legend(loc=2, prop={'size': 20})
 plt.show()
-"""
