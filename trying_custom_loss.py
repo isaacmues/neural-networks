@@ -15,9 +15,9 @@ import os
 # Solo para evitar las banderas de error
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-x = np.linspace(0, 1, 11)
+x = np.linspace(0, 1, 601)
 x = np.array([x]).T
-h = 1e-3
+h = 1e-6
 y0 = 1.0
 
 true_values = x ** 2 + 1
@@ -41,9 +41,10 @@ def training_step():
     with tf.GradientTape() as tape:
         loss = custom_loss()
     grads = tape.gradient(loss, model.trainable_weights)
+    optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
 
-optimizer = optimizers.SGD(1e-3)
+optimizer = optimizers.SGD(2e-3)
 
 model = keras.Sequential(
     [
@@ -69,4 +70,16 @@ model = keras.Sequential(
     ]
 )
 
-print(custom_loss())
+for i in range(1000):
+    training_step()
+    if i % 100 == 0:
+        print("loss: {}".format(custom_loss()))
+
+
+y_true = tf.transpose(true_values).numpy()[0]
+y_pred = tf.transpose(g(x)).numpy()[0]
+x = x.T[0]
+
+plt.plot(x, y_true)
+plt.plot(x, y_pred)
+plt.show()
