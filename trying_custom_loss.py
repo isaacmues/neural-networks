@@ -16,49 +16,57 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 x = np.linspace(0, 1, 11)
+x = np.array([x]).T
 h = 1e-3
 y0 = 1.0
 
+true_values = x ** 2 + 1
+
 
 def g(x):
-    x = np.array([x]).T
-    return x * model(x) + y0
+    nn = model(x)
+    return x * nn + y0
 
 
-# x = x.reshape((11,1))
-def custom_loss(x, y_pred):
-    dydx = (model(x + h) - y_pred) / h
-    return tf.reduce_sum(tf.square(dydx - 2 * x))
+def f(x):
+    return 2 * x
 
 
-model = keras.Sequential()
-model.add(
-    layers.Dense(
-        32,
-        input_shape=[1],
-        activation="sigmoid",
-        kernel_initializer=initializers.RandomNormal(stddev=1.0),
-        bias_initializer=initializers.RandomNormal(stddev=1.0),
-    )
+def custom_loss():
+    dydx = (g(x + h) - g(x)) / h
+    return tf.reduce_sum(tf.square((dydx - f(x))))
+
+
+def training_step():
+    with tf.GradientTape() as tape:
+        loss = custom_loss()
+    grads = tape.gradient(loss, model.trainable_weights)
+
+
+optimizer = optimizers.SGD(1e-3)
+
+model = keras.Sequential(
+    [
+        layers.Dense(
+            32,
+            input_shape=[1],
+            activation="sigmoid",
+            kernel_initializer=initializers.RandomNormal(stddev=1.0),
+            bias_initializer=initializers.RandomNormal(stddev=1.0),
+        ),
+        layers.Dense(
+            32,
+            activation="sigmoid",
+            kernel_initializer=initializers.RandomNormal(stddev=1.0),
+            bias_initializer=initializers.RandomNormal(stddev=1.0),
+        ),
+        layers.Dense(
+            1,
+            activation="sigmoid",
+            kernel_initializer=initializers.RandomNormal(stddev=1.0),
+            bias_initializer=initializers.RandomNormal(stddev=1.0),
+        ),
+    ]
 )
-model.add(
-    layers.Dense(
-        32,
-        activation="sigmoid",
-        kernel_initializer=initializers.RandomNormal(stddev=1.0),
-        bias_initializer=initializers.RandomNormal(stddev=1.0),
-    )
-)
-model.add(
-    layers.Dense(
-        1,
-        activation="sigmoid",
-        kernel_initializer=initializers.RandomNormal(stddev=1.0),
-        bias_initializer=initializers.RandomNormal(stddev=1.0),
-    )
-)
 
-dydx = (g(x + h) - g(x)) / h
-
-print(tf.square(np.linspace(1, 5, 5)))
-print(tf.reduce_sum(np.linspace(1, 5, 5)))
+print(custom_loss())
