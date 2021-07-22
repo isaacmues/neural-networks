@@ -15,7 +15,7 @@ import os
 # Solo para evitar las banderas de error
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-x = np.linspace(0, 1, 601)
+x = np.linspace(0, 1, 2501)
 x = np.array([x]).T
 h = 1e-6
 y0 = 1.0
@@ -37,6 +37,11 @@ def custom_loss():
     return tf.reduce_sum(tf.square((dydx - f(x))))
 
 
+def custom_loss_2(x, y_pred):
+    dydx = (g(x + h) - g(x)) / h
+    return tf.reduce_sum(tf.square((dydx - f(x))))
+
+
 def training_step():
     with tf.GradientTape() as tape:
         loss = custom_loss()
@@ -44,7 +49,7 @@ def training_step():
     optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
 
-optimizer = optimizers.SGD(2e-3)
+optimizer = optimizers.SGD(1e-3)
 
 model = keras.Sequential(
     [
@@ -70,11 +75,16 @@ model = keras.Sequential(
     ]
 )
 
-for i in range(1000):
+model.compile(optimizer='sgd', loss=custom_loss_2)
+
+model.fit(x, x, epochs=1000)
+
+"""
+for i in range(2000):
     training_step()
     if i % 100 == 0:
         print("loss: {}".format(custom_loss()))
-
+"""
 
 y_true = tf.transpose(true_values).numpy()[0]
 y_pred = tf.transpose(g(x)).numpy()[0]
