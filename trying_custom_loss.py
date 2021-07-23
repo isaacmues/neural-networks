@@ -1,55 +1,41 @@
 """
-Let's try to update the ODE solver to use Keras with a custom_loss
-function
-
-So the ODE to solve is dy/dx = 2x with y(0) = 1
+Solution of Problem 1 using TensorFlow 2 of Artificial Neural Networks for Solving
+Ordinary and Partial Differential Equations by Lagaris, Likas and Fotiadis
 """
 
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, initializers, optimizers
 import matplotlib.pyplot as plt
-import os
 
-# Solo para evitar las banderas de error
+# This is to avoid some error flags about compilation
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-x = np.linspace(0, 1, 2501)
+x = np.linspace(0, 1, 10)
 x = np.array([x]).T
-h = 1e-6
-y0 = 1.0
-
-true_values = x ** 2 + 1
 
 
 def g(x):
     nn = model(x)
-    return x * nn + y0
+    return x * nn + 1.0
+
+
+def dgdx(x):
+    h = 1e-6
+    return (g(x + h) - g(x)) / h
 
 
 def f(x):
-    return 2 * x
+    nn = model(x)
+    a = (1 + 3 * x ** 2) / (1 + x + x ** 3)
+    return x ** 3 + 2 * x + a * x ** 2 - (x + a) * nn
 
 
-def custom_loss():
-    dydx = (g(x + h) - g(x)) / h
-    return tf.reduce_sum(tf.square((dydx - f(x))))
+def custom_loss(x, y_pred):
+    return tf.reduce_sum(tf.square((dgdx(x) - f(x))))
 
-
-def custom_loss_2(x, y_pred):
-    dydx = (g(x + h) - g(x)) / h
-    return tf.reduce_sum(tf.square((dydx - f(x))))
-
-
-def training_step():
-    with tf.GradientTape() as tape:
-        loss = custom_loss()
-    grads = tape.gradient(loss, model.trainable_weights)
-    optimizer.apply_gradients(zip(grads, model.trainable_weights))
-
-
-optimizer = optimizers.SGD(1e-3)
 
 model = keras.Sequential(
     [
@@ -74,22 +60,16 @@ model = keras.Sequential(
         ),
     ]
 )
-
-model.compile(optimizer='sgd', loss=custom_loss_2)
-
+model.compile(optimizer="sgd", loss=custom_loss)
 model.fit(x, x, epochs=1000)
 
-"""
-for i in range(2000):
-    training_step()
-    if i % 100 == 0:
-        print("loss: {}".format(custom_loss()))
-"""
-
-y_true = tf.transpose(true_values).numpy()[0]
+x = np.linspace(0, 1, 100)
+y_true = np.exp(0.5 * x ** 2) / (1 + x + x ** 3) + x ** 2
+x = np.array([x]).T
 y_pred = tf.transpose(g(x)).numpy()[0]
 x = x.T[0]
 
-plt.plot(x, y_true)
-plt.plot(x, y_pred)
+plt.plot(x, y_true, label="Analytic", c="black")
+plt.plot(x, y_pred, label="Neural Network", c="red")
+plt.legend()
 plt.show()
