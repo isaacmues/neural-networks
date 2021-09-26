@@ -33,6 +33,8 @@ from tensorflow.keras import Sequential, Input, Model
 from tensorflow.keras.layers import Dense, Concatenate
 import matplotlib.pyplot as plt
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 def psi_a(x,y):
 
     return tf.exp(-x) * (x + y**3)
@@ -60,12 +62,14 @@ def laplacian(f, x, y, h):
     d -= 4 * f(x, y)
     return d / h**2
 
+def lhs(x,y):
+
+    return tf.exp(-x) * (x - 2.0 + y**3 + 6.0 * y)
+
 def custom_loss(p, y_pred):
 
     x,y = p
-    error = laplacian(psi_t, x, y, 1e-6)
-    error -= tf.exp(-x) * (x - 2.0 + y**3 + 6.0 * y)
-
+    error = laplacian(psi_t, x, y, 1e-3) - lhs(x,y)
     return tf.reduce_sum(tf.square(error))
 
 input_x = Input(shape=[1])
@@ -77,14 +81,10 @@ p = Dense(8, activation="tanh")(p)
 output = Dense(1, activation="selu")(p)
 nn = Model(inputs=[input_x, input_y], outputs=output)
 
-#x = tf.linspace(0.0, 1.0, 10)
-#x = tf.expand_dims(x, axis=1)
-#y = x
-
-points = tf.linspace(0.0, 1.0, 5)
+points = tf.linspace(0.0, 1.0, 10)
 z = [[x,y] for x in points for y in points]
 x,y = tf.transpose(z)
 x = tf.expand_dims(x, axis=1)
 y = tf.expand_dims(y, axis=1)
 
-print(psi_a(x,y) - psi_t(x,y))
+print(custom_loss([x,y], 0))
