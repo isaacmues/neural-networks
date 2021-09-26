@@ -39,9 +39,17 @@ def psi_a(x,y):
 
 def psi_t(x,y):
 
-    A = (1 - x) * y**3 + x * (1 + y**3) * np.exp(-1.0)
-    A += (1 - y) * x * (tf.exp(-x) - np.exp(-1.0))
-    A += y * ((1 + x) * tf.exp(-x) - (1 - x - 2.0 * x * np.exp(-1.0)))
+    e = np.exp(-1)
+
+    f0 = y**3
+    f1 = (y**3 + 1) * e
+    g0 = x * tf.exp(-x)
+    g1 = (x + 1) * tf.exp(-x)
+
+    A = (1 - x) * f0
+    A += x * f1
+    A += (1 - y) * (g0 - x * e)
+    A += y * (g1 - (1 - x + 2 * x * e))
 
     return A + x * (1 - x) * y * (1 - y) * nn([x,y])
 
@@ -69,9 +77,14 @@ p = Dense(8, activation="tanh")(p)
 output = Dense(1, activation="selu")(p)
 nn = Model(inputs=[input_x, input_y], outputs=output)
 
-x = tf.linspace(0.0, 1.0, 10)
-x = tf.expand_dims(x, axis=1)
-y = x
+#x = tf.linspace(0.0, 1.0, 10)
+#x = tf.expand_dims(x, axis=1)
+#y = x
 
-print(psi_a(x,y))
-print(psi_t(x,y))
+points = tf.linspace(0.0, 1.0, 5)
+z = [[x,y] for x in points for y in points]
+x,y = tf.transpose(z)
+x = tf.expand_dims(x, axis=1)
+y = tf.expand_dims(y, axis=1)
+
+print(psi_a(x,y) - psi_t(x,y))
