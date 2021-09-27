@@ -109,9 +109,9 @@ y = tf.reshape(z[:,1], [n,n])
 psi = tf.reshape(psi_t(z), [n, n])
 psi_true = tf.reshape(psi_a(z), [n, n])
 
-fig, ax = plt.subplots()
-CS = ax.contour(x, y, psi_true, colors="black")
-CS = ax.contour(x, y, psi, colors="red")
+fig, [ax1, ax2] = plt.subplots(1, 2)
+CS1 = ax1.contourf(x, y, psi_true)
+CS2 = ax2.contourf(x, y, psi)
 plt.show()
 
 print(np.max(tf.abs(psi - psi_true).numpy()))
