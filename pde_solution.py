@@ -78,12 +78,14 @@ def lhs(x,y):
 
 def custom_loss(z, y_pred):
 
+    h = 1e-2
+
     x = tf.reduce_sum(z * [[1.0, 0.0]], axis=1)
     y = tf.reduce_sum(z * [[0.0, 1.0]], axis=1)
     x = tf.expand_dims(x, axis=1)
     y = tf.expand_dims(y, axis=1)
 
-    error = tf.reduce_sum(tf.square(laplacian(psi_t, z, 1e-3) - lhs(x,y)))
+    error = tf.reduce_sum(tf.square(laplacian(psi_t, z, h) - lhs(x,y)))
 
     return error
 
@@ -95,18 +97,21 @@ outputs = Dense(1, activation="selu")(p)
 nn = Model(inputs=inputs, outputs=outputs)
 nn.compile(optimizer="adam", loss=custom_loss)
 
-points = np.linspace(0.0, 1.0, 40)
+n = 60
+points = np.linspace(0.0, 1.0, n)
 z = [[x,y] for x in points for y in points]
 z = tf.constant(z, dtype=tf.float32)
 
-nn.fit(z, z, epochs=200)
+nn.fit(z, z, epochs=100)
 
-x = tf.reshape(z[:,0], [40,40])
-y = tf.reshape(z[:,1], [40,40])
-psi = tf.reshape(psi_t(z), [40, 40])
-psi_2 = tf.reshape(psi_a(z), [40, 40])
+x = tf.reshape(z[:,0], [n,n])
+y = tf.reshape(z[:,1], [n,n])
+psi = tf.reshape(psi_t(z), [n, n])
+psi_true = tf.reshape(psi_a(z), [n, n])
 
 fig, ax = plt.subplots()
-CS = ax.contour(x, y, psi)
-CS = ax.contour(x, y, psi_2)
+CS = ax.contour(x, y, psi_true, colors="black")
+CS = ax.contour(x, y, psi, colors="red")
 plt.show()
+
+print(np.max(tf.abs(psi - psi_true).numpy()))
