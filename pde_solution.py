@@ -111,7 +111,13 @@ psi_true = tf.reshape(psi_a(z), [n, n])
 
 fig, [ax1, ax2] = plt.subplots(1, 2)
 CS1 = ax1.contourf(x, y, psi_true)
+CS2 = ax1.contour(x, y, psi_true, colors="black")
+ax1.set_title("Solución analítica")
+fig.colorbar(CS1, ax=ax1)
 CS2 = ax2.contourf(x, y, psi)
+CS2 = ax2.contour(x, y, psi, colors="black")
+ax2.set_title("Red neuronal")
+fig.colorbar(CS2, ax=ax2)
 plt.show()
 
 print(np.max(tf.abs(psi - psi_true).numpy()))
