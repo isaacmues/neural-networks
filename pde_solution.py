@@ -76,14 +76,18 @@ def lhs(x,y):
 
     return tf.exp(-x) * (x - 2.0 + y**3 + 6.0 * y)
 
+def vector_projection(u, v):
+
+    return tf.expand_dims(tf.reduce_sum(u * v, 1), 1)
+
 def custom_loss(z, y_pred):
 
     h = 1e-2
 
-    x = tf.reduce_sum(z * [[1.0, 0.0]], axis=1)
-    y = tf.reduce_sum(z * [[0.0, 1.0]], axis=1)
-    x = tf.expand_dims(x, axis=1)
-    y = tf.expand_dims(y, axis=1)
+    i = [[1.0, 0.0]]
+    j = [[0.0, 1.0]]
+    x = vector_projection(z, i)
+    y = vector_projection(z, j)
 
     error = tf.reduce_sum(tf.square(laplacian(psi_t, z, h) - lhs(x,y)))
 
