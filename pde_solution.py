@@ -94,10 +94,9 @@ def custom_loss(z, y_pred):
     return error
 
 inputs = Input(shape=[2])
-p = Dense(8, activation="tanh")(inputs)
-p = Dense(8, activation="tanh")(inputs)
-p = Dense(8, activation="tanh")(inputs)
-outputs = Dense(1, activation="selu")(p)
+p = Dense(4, activation="sigmoid")(inputs)
+p = Dense(4, activation="sigmoid")(inputs)
+outputs = Dense(1, activation="sigmoid")(p)
 nn = Model(inputs=inputs, outputs=outputs)
 nn.compile(optimizer="adam", loss=custom_loss)
 
