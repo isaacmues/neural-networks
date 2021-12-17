@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 
 class NeuralNetwork(nn.Module):
-    def __init__(self):
+
+    def __init__(self, bcs):
 
         super(NeuralNetwork, self).__init__()
 
@@ -19,11 +20,13 @@ class NeuralNetwork(nn.Module):
             nn.Sigmoid(),
         )
 
+        self.bcs = bcs
+
     def forward(self, x, y):
 
         xy = torch.cat((x, y), 1)
 
-        return A(x, y) + x * (1 - x) * y * (1 - y) * self.linear_sigmoid_stack(xy)
+        return self.bcs(x, y) + x * (1 - x) * y * (1 - y) * self.linear_sigmoid_stack(xy)
 
 
 class coordinates(Dataset):
@@ -53,34 +56,18 @@ class coordinates(Dataset):
         return [self.grid_x, self.grid_y]
 
 
-def f0(y):
-
-    return y ** 3
-
-
-def f1(y):
-
-    return (y ** 3 + 1) * exp(-1)
-
-
-def g0(x):
-
-    return x * torch.exp(-x)
-
-
-def g1(x):
-
-    return (x + 1) * torch.exp(-x)
-
-
 def A(x, y):
-
     e = exp(-1)
-    a = (1 - x) * f0(y) + x * f1(y)
-    a += (1 - y) * (g0(x) - x * e) + y * (g1(x) - (1 - x + 2 * x * e))
+
+    f0 = y ** 3
+    f1 = (y ** 3 + 1) * e
+    g0 = x * torch.exp(-x)
+    g1 = (x + 1) * torch.exp(-x)
+
+    a = (1 - x) * f0 + x * f1
+    a += (1 - y) * (g0 - x * e) + y * (g1 - (1 - x + 2 * x * e))
 
     return a
-
 
 def psi_a(x, y):
 
@@ -123,7 +110,7 @@ def training_loop(dataloader, sol, loss_fn, optimizer):
 epochs = 100
 nx, ny = 50, 50
 xy = coordinates(nx, ny)
-psi_t = NeuralNetwork()
+psi_t = NeuralNetwork(A)
 dataloader = DataLoader(xy, batch_size=20, shuffle=True)
 optimizer = torch.optim.Adam(psi_t.parameters(), lr=0.01)
 
