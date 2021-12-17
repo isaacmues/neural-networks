@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from math import exp
 from torch.utils.data import DataLoader, Dataset
+import matplotlib.pyplot as plt
 
 
 class NeuralNetwork(nn.Module):
@@ -46,6 +47,10 @@ class coordinates(Dataset):
     def getall(self):
 
         return [self.flat_x, self.flat_y]
+
+    def getgrid(self):
+
+        return [self.grid_x, self.grid_y]
 
 
 def f0(y):
@@ -98,22 +103,28 @@ def pde(sol, x_, y_):
 
 def training_loop(dataloader, sol, loss_fn, optimizer):
 
+    total_loss = 0.0
+
     for batch, (x, y) in enumerate(dataloader):
 
         loss = loss_fn(sol, x, y)
+        total_loss += loss
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         if batch % 10 == 0:
 
-            print(f"Batch: {batch:>d} Loss: {loss:>2E}")
+            print(f"Batch: {batch:>d} Loss: {loss:.2E}")
+
+    print(f'--------------------------------\nTotal loss: {total_loss:.2E}')
 
 
 epochs = 100
-xy = coordinates(50, 50)
+nx, ny = 50, 50
+xy = coordinates(nx, ny)
 psi_t = NeuralNetwork()
-dataloader = DataLoader(xy, batch_size=25, shuffle=True)
+dataloader = DataLoader(xy, batch_size=20, shuffle=True)
 optimizer = torch.optim.Adam(psi_t.parameters(), lr=0.01)
 
 for t in range(epochs):
@@ -123,6 +134,16 @@ for t in range(epochs):
 
 
 x, y = xy.getall()
-error = torch.abs(psi_t(x, y) - psi_a(x, y))
+neural_solution = psi_t(x, y)
+error = torch.abs(neural_solution - psi_a(x, y))
 error = torch.max(error)
-print(error)
+print(f"\n>> Maximum error {error:.2E} <<")
+
+x, y = xy.getgrid()
+x = torch.reshape(x, (nx, ny)).numpy()
+y = torch.reshape(y, (nx, ny)).numpy()
+neural_solution = torch.reshape(neural_solution, (nx, ny)).detach().numpy()
+
+plt.contourf(x, y, neural_solution)
+plt.contour(x, y, neural_solution, colors="black")
+plt.show()
